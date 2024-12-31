@@ -2,8 +2,8 @@
 
 This repository contains the Verilog implementation of a systolic array, a specialized parallel computing architecture optimized for matrix operations. The design consists of **Processing Elements (PEs)** connected in a grid structure.
 
-## Run on EDA Playground
- [EDA Playground](https://www.edaplayground.com/x/rvDL)
+## Run on [EDA Playground](https://www.edaplayground.com/x/rvDL)
+ 
 
 ## Overview
 
