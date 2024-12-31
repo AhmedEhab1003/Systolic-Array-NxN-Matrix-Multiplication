@@ -2,7 +2,7 @@
 //                                                                Processing Element Module                                                       //
 //##################################################################################################################################################
 
-module PE #(parameter data_width=8)
+module PE #(parameter data_width=8) // comment
   (
     input  logic                      i_clk , i_rst,
     input  logic [data_width-1:0]     i_Left , i_Top,
