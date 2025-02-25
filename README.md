@@ -1,81 +1,99 @@
-# Systolic Array Design
+# Systolic Array Matrix Multiplication
 
-This repository contains the Verilog implementation of a systolic array, a specialized parallel computing architecture optimized for matrix operations. The design consists of **Processing Elements (PEs)** connected in a grid structure.
-
-## Run on [EDA Playground](https://www.edaplayground.com/x/rvDL)
- 
+![Systolic Array Architecture](https://upload.wikimedia.org/wikipedia/commons/thumb/c/c9/Systolic_matrix_multiplication.svg/300px-Systolic_matrix_multiplication.svg.png)
 
 ## Overview
 
-### Processing Element (PE)
-The `PE` module performs:
-- Multiplication of two inputs.
-- Accumulation of multiplication results.
-- Passing inputs to the next PE in the array.
+This repository contains a parametrized Verilog implementation of a systolic array for matrix multiplication. Systolic arrays are specialized hardware architectures designed for efficient parallel computations, particularly well-suited for matrix operations in applications like deep learning accelerators, signal processing, and scientific computing.
 
-#### Parameters:
-- `data_width` (default: 8): Defines the bit width of the data processed.
+The name "systolic" comes from the medical term for rhythmic contraction, much like a heartbeat. In computing, it refers to how data rhythmically flows through an array of processing elements, creating a pipeline of calculations.
 
-#### Ports:
-| Port Name       | Direction | Width             | Description                              |
-|-----------------|-----------|-------------------|------------------------------------------|
-| `i_clk`         | Input     | 1                 | Clock signal.                            |
-| `i_rst`         | Input     | 1                 | Reset signal.                            |
-| `i_Left`        | Input     | `data_width`      | Input from the left.                     |
-| `i_Top`         | Input     | `data_width`      | Input from the top.                      |
-| `o_right`       | Output    | `data_width`      | Output to the right.                     |
-| `o_down`        | Output    | `data_width`      | Output to the bottom.                    |
-| `o_Cell_Value`  | Output    | `(2 * data_width)`| Accumulated cell value.                  |
+## Run on [EDA Playground](https://www.edaplayground.com/x/rvDL)
 
-### Systolic Array
-The `Systolic_Array` module integrates multiple `PE` instances to form a 3x3 systolic array.
+## Repository Contents
 
-#### Parameters:
-- `data_width` (default: 8): Defines the bit width of the data processed.
+- `systolic_array.v` - Main module that instantiates and connects processing elements
+- `processing_element.v` - Individual compute cell that performs multiply-accumulate operations
+- `testbench.v` - Comprehensive testbench with random matrix generation and result verification
 
-#### Ports:
-| Port Name       | Direction | Width             | Description                              |
-|-----------------|-----------|-------------------|------------------------------------------|
-| `i_clk`         | Input     | 1                 | Clock signal.                            |
-| `i_rst`         | Input     | 1                 | Reset signal.                            |
-| `i_Cell_A1`     | Input     | `data_width`      | Input to PE1 from the left.              |
-| `i_Cell_A4`     | Input     | `data_width`      | Input to PE4 from the left.              |
-| `i_Cell_A7`     | Input     | `data_width`      | Input to PE7 from the left.              |
-| `i_Cell_B1`     | Input     | `data_width`      | Input to PE1 from the top.               |
-| `i_Cell_B2`     | Input     | `data_width`      | Input to PE2 from the top.               |
-| `i_Cell_B3`     | Input     | `data_width`      | Input to PE3 from the top.               |
-| `o_cell_1`-`o_cell_9` | Output | `(2 * data_width)`| Outputs from the 9 PEs in the array.     |
+## Features
 
-### Connections
-The 3x3 array connects PEs as follows:
-- Inputs are fed to the first row and column of PEs.
-- Outputs from each PE are passed to the next PE in the row and column.
+- **Fully Parametrized Design**:
+  - Configurable array dimensions (ARRAY_SIZE)
+  - Adjustable data width (DATA_WIDTH)
+  - Auto-calculated accumulator width for precision
 
-## How to Use
+- **Efficient Architecture**:
+  - Pipelined data flow for high throughput
+  - Minimized control overhead
+  - Regular structure for easy scaling
 
-1. Instantiate the `Systolic_Array` module in your testbench or top-level design.
-2. Provide inputs (`i_Cell_A*` and `i_Cell_B*`) for matrix multiplication.
-3. Simulate the design using your preferred simulator (e.g., ModelSim, Vivado, etc.).
-4. Observe the outputs (`o_cell_*`) for results.
+- **Robust Verification**:
+  - Randomized test matrix generation
+  - Automatic result verification
+  - Detailed error reporting
 
-## Example Usage
+## How It Works
+
+The systolic array performs matrix multiplication by:
+
+1. Feeding matrix elements in a skewed pattern into the array
+2. Each processing element (PE) performs a multiply-accumulate operation
+3. Data flows horizontally and vertically through the array
+4. Results accumulate in place, with the final matrix available after 2N-1 cycles (where N is the matrix dimension)
+
+## Parameter Configuration
+
+| Parameter | Description | Default |
+|-----------|-------------|---------|
+| DATA_WIDTH | Bit width of input data elements | 8 |
+| ARRAY_SIZE | Dimensions of the systolic array (N×N) | 3 |
+| ACCUMULATOR_WIDTH | Bit width for result accumulation | 2*DATA_WIDTH + log2(ARRAY_SIZE) |
+
+## Usage Example
+
 ```verilog
-Systolic_Array #(8) uut (
-  .i_clk(clk),
-  .i_rst(rst),
-  .i_Cell_A1(a1), .i_Cell_A4(a4), .i_Cell_A7(a7),
-  .i_Cell_B1(b1), .i_Cell_B2(b2), .i_Cell_B3(b3),
-  .o_cell_1(o1), .o_cell_2(o2), .o_cell_3(o3),
-  .o_cell_4(o4), .o_cell_5(o5), .o_cell_6(o6),
-  .o_cell_7(o7), .o_cell_8(o8), .o_cell_9(o9)
+// Instantiate a 4×4 systolic array with 16-bit data
+systolic_array #(
+    .DATA_WIDTH(16),
+    .ARRAY_SIZE(4),
+    .ACCUMULATOR_WIDTH(36)  // Or let it calculate automatically
+) matrix_multiplier (
+    .clk(clk),
+    .rst_n(rst_n),
+    .enable(enable),
+    .a_inputs(a_data),
+    .b_inputs(b_data),
+    .c_outputs(result),
+    .computation_done(done)
 );
 ```
 
-## Applications
-This systolic array can be used in:
-- Matrix multiplication.
-- Signal processing.
-- Machine learning hardware accelerators.
+## Simulation and Testing
 
-## License
-This project is open-source and available under the MIT License.
+The testbench provides comprehensive verification with:
+
+1. Random matrix generation (values 1-9 for readability)
+2. Reference software implementation for comparison
+3. Automatic verification against expected results
+
+
+## Applications
+
+- Deep learning accelerators
+- Image processing pipelines
+- High-performance computing
+- Signal processing systems
+- Neural network inference engines
+
+## Future Improvements
+
+- Support for non-square matrices
+- Optimized PE designs for specific operations
+- Power gating for inactive elements
+
+## References
+
+- H.T. Kung and Charles Leiserson, "Systolic Arrays for VLSI", 1978
+- Kung, S.Y., "VLSI Array Processors", 1988
+- Norman P. Jouppi et al., "In-Datacenter Performance Analysis of a Tensor Processing Unit", 2017
