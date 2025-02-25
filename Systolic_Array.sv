@@ -1,32 +1,65 @@
-
-
-// ##################################################################################################################################################
-//                                                             Systolic Array Module                                                               //
-//##################################################################################################################################################
-
-module Systolic_Array #(parameter data_width=8) (
-
-  input  logic                      i_clk     , i_rst,
-  input  logic [data_width-1:0]     i_Cell_A1 , i_Cell_A4,i_Cell_A7,
-  input  logic [data_width-1:0]     i_Cell_B1 , i_Cell_B2,i_Cell_B3,
-  output logic [(data_width*2):0]   o_cell_1  , o_cell_2 , o_cell_3 , o_cell_4 , o_cell_5, o_cell_6 , o_cell_7, o_cell_8, o_cell_9
-
+module systolic_array #(
+    parameter DATA_WIDTH = 8,              // Width of data elements
+    parameter ARRAY_SIZE = 4,              // Size of the systolic array (ARRAY_SIZE x ARRAY_SIZE)
+    parameter ACCUMULATOR_WIDTH = 24       // Width of accumulator registers
+) (
+    input  wire                            clk,
+    input  wire                            rst_n,
+    input  wire                            enable,
+    input  wire [DATA_WIDTH-1:0]           a_inputs [0:ARRAY_SIZE-1], // Input data from matrix A
+    input  wire [DATA_WIDTH-1:0]           b_inputs [0:ARRAY_SIZE-1], // Input data from matrix B
+    output wire [ACCUMULATOR_WIDTH-1:0]    c_outputs [0:ARRAY_SIZE-1][0:ARRAY_SIZE-1], // Result matrix C
+    output wire                            computation_done            // Indicates when computation is complete
 );
 
-  logic [data_width-1:0] A12 , A23 , A45 , A56 , A78 , A89;
-  logic [data_width-1:0] B14 , B47 , B25 , B58 , B36 , B69;
-
-  //referabce 
-  //PE ports(i_clk,i_rst,i_Left,i_Top,o_right,o_down,o_Cell_Value);
-
-  PE PE1(i_clk,i_rst,i_Cell_A1,i_Cell_B1,A12,B14,o_cell_1);
-  PE PE2(i_clk,i_rst,A12,i_Cell_B2,A23,B25,o_cell_2);
-  PE PE3(i_clk,i_rst,A23,i_Cell_B3,,B36,o_cell_3);
-  PE PE4(i_clk,i_rst,i_Cell_A4,B14,A45,B47,o_cell_4);
-  PE PE5(i_clk,i_rst,A45,B25,A56,B58,o_cell_5);
-  PE PE6(i_clk,i_rst,A56,B36,,B69,o_cell_6);
-  PE PE7(i_clk,i_rst,i_Cell_A7,B47,A78,,o_cell_7);
-  PE PE8(i_clk,i_rst,A78,B58,A89,,o_cell_8);
-  PE PE9(i_clk,i_rst,A89,B69,,,o_cell_9);
+    // Declare connections between PEs
+    wire [DATA_WIDTH-1:0] a_connections [0:ARRAY_SIZE-1][0:ARRAY_SIZE];
+    wire [DATA_WIDTH-1:0] b_connections [0:ARRAY_SIZE][0:ARRAY_SIZE-1];
+    
+    // Counter for computation done signal
+    reg [$clog2(2*ARRAY_SIZE):0] counter;
+    assign computation_done = (counter >= (2*ARRAY_SIZE + 1));
+    
+    always @(posedge clk or negedge rst_n) begin
+        if (!rst_n) begin
+            counter <= 0;
+        end else if (enable) begin
+            if (counter <= (2*ARRAY_SIZE + 1))
+                counter <= counter + 1;
+        end
+    end
+    
+    // Connect inputs to first row and column
+    genvar i, j;
+    generate
+        for (i = 0; i < ARRAY_SIZE; i = i + 1) begin
+            // Connect A inputs to leftmost column of the array
+            assign a_connections[i][0] = a_inputs[i];
+            
+            // Connect B inputs to top row of the array
+            assign b_connections[0][i] = b_inputs[i];
+        end
+    endgenerate
+    
+    // Generate the 2D array of processing elements
+    generate
+        for (i = 0; i < ARRAY_SIZE; i = i + 1) begin
+            for (j = 0; j < ARRAY_SIZE; j = j + 1) begin
+                processing_element #(
+                    .DATA_WIDTH(DATA_WIDTH),
+                    .ACCUMULATOR_WIDTH(ACCUMULATOR_WIDTH)
+                ) pe_inst (
+                    .clk(clk),
+                    .rst_n(rst_n),
+                    .enable(enable),
+                    .a_in(a_connections[i][j]),
+                    .b_in(b_connections[i][j]),
+                    .a_out(a_connections[i][j+1]),
+                    .b_out(b_connections[i+1][j]),
+                    .c_out(c_outputs[i][j])
+                );
+            end
+        end
+    endgenerate
 
 endmodule
