@@ -12,6 +12,7 @@ module processing_element #(
     output wire [ACCUMULATOR_WIDTH-1:0] c_out   // Output result
 );
 
+<<<<<<< HEAD
     // Internal accumulator register
     reg [ACCUMULATOR_WIDTH-1:0] accumulator;
     assign c_out = accumulator;
@@ -24,6 +25,25 @@ module processing_element #(
         end else if (enable) begin
             a_out <= a_in;
             b_out <= b_in;
+=======
+module PE #(parameter data_width=8) // comment
+  (
+    input  logic                      i_clk , i_rst,
+    input  logic [data_width-1:0]     i_Left , i_Top,
+    output logic [data_width-1:0]     o_right, o_down,
+    output logic [(2*data_width):0]   o_Cell_Value
+  );
+
+  logic [(2*data_width)-1:0] mul;
+
+  always @(posedge i_clk or posedge i_rst) 
+    begin
+      if(i_rst)
+        begin
+          o_right         <= 0;
+          o_down          <= 0;
+          o_Cell_Value    <= 0;
+>>>>>>> e7b8732ebaf2e22147239848c1f3c2f2f5025820
         end
     end
     
@@ -37,4 +57,10 @@ module processing_element #(
         end
     end
 
+<<<<<<< HEAD
 endmodule
+=======
+  assign mul = i_Left * i_Top;           // mulitplication 
+
+endmodule
+>>>>>>> e7b8732ebaf2e22147239848c1f3c2f2f5025820
