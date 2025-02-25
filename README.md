@@ -1,6 +1,6 @@
 # Systolic Array Matrix Multiplication
 
-![Systolic Array Architecture](https://upload.wikimedia.org/wikipedia/commons/thumb/c/c9/Systolic_matrix_multiplication.svg/300px-Systolic_matrix_multiplication.svg.png)
+![Systolic Array Architecture](systolic_matrix_mult.png)
 
 ## Overview
 
